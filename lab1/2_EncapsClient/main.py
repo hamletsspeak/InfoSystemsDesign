@@ -1,3 +1,5 @@
+import json
+    
 class ClientBase:
     @staticmethod
     def validate_field(field, field_name, min_length):
@@ -18,3 +20,16 @@ class ClientBase:
         self.validate_field(middle_name, "Отчество", 2)
         self.validate_passport_data(passport_data)
         self.validate_phone(phone)
+        
+    @staticmethod
+    def from_string(data_string):
+        fields = data_string.split(',')
+        if len(fields) != 5:
+            raise ValueError("Неверный формат строки для создания объекта.")
+        return ClientBase(*fields)
+
+    @staticmethod
+    def from_json(json_string):
+        data = json.loads(json_string)
+        return ClientBase(**data)
+
