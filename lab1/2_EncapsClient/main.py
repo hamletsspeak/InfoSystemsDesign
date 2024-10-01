@@ -1,18 +1,20 @@
 class ClientBase:
     @staticmethod
-    def validate_name(name):
-        if not name or len(name) < 2:
-            raise ValueError("Имя должно содержать не менее 2 символов.")
+    def validate_field(field, field_name, min_length):
+        if not field or len(field) < min_length:
+            raise ValueError(f"{field_name} должно содержать не менее {min_length} символов.")
         return True
 
-    @staticmethod
-    def validate_passport_data(passport_data):
-        if len(passport_data) != 10:
-            raise ValueError("Паспортные данные должны содержать 10 символов.")
-        return True
+    def __init__(self, last_name, first_name, middle_name, passport_data, phone):
+        self.__last_name = last_name
+        self.__first_name = first_name
+        self.__middle_name = middle_name
+        self.__passport_data = passport_data
+        self.__phone = phone
 
-    @staticmethod
-    def validate_phone(phone):
-        if not phone.startswith('+') or len(phone) < 10:
-            raise ValueError("Номер телефона должен начинаться с '+' и содержать не менее 10 цифр.")
-        return True
+        # Валидация данных
+        self.validate_field(last_name, "Фамилия", 2)
+        self.validate_field(first_name, "Имя", 2)
+        self.validate_field(middle_name, "Отчество", 2)
+        self.validate_passport_data(passport_data)
+        self.validate_phone(phone)
