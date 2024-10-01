@@ -105,29 +105,6 @@ class ClientBase:
     def get_phone(self):
         return self.__phone
 
-
-
-
-    # Полная версия объекта (с выводом всех полей)
-    def __eq__(self, other):
-        if isinstance(other, ClientBase):
-            return (self.__last_name == other.__last_name and
-                    self.__first_name == other.__first_name and
-                    self.__middle_name == other.__middle_name and
-                    self.__passport_data == other.__passport_data and
-                    self.__phone == other.__phone)
-        return False
-
-class Client(ClientBase):
-    def __str__(self):
-        return (f"Client: {self.get_last_name()} {self.get_first_name()} {self.get_middle_name()}\n"
-                f"Passport Data: {self.get_passport_data()}\n"
-                f"Phone: {self.get_phone()}")
-
-class ClientShortInfo(ClientBase):
-    def __str__(self):
-        return f"Client: {self.get_last_name()} {self.get_first_name()[0]}. {self.get_middle_name()[0]}. - Phone: {self.get_phone()}"
-
     # Сравнение объектов на равенство
     def __eq__(self, other):
         if isinstance(other, ClientBase):
@@ -151,8 +128,10 @@ class Client(ClientBase):
         else:
             raise ValueError("Invalid pledge item")
 
+
     def __str__(self):
         pledges_info = "\n".join([str(pledge) for pledge in self.__pledges]) if self.__pledges else "No pledges"
+        #Возвращает полную версию информации о клиенте
         return (f"Client: {self.get_last_name()} {self.get_first_name()} {self.get_middle_name()}\n"
                 f"Address: {self.get_address()}\n"
                 f"Phone: {self.get_phone()}\n"
@@ -162,6 +141,7 @@ class Client(ClientBase):
 # Краткая информация о клиенте
 class ClientShortInfo(ClientBase):
     def __str__(self):
+        #Возвращает краткую версию информации о клиенте
         return f"Client: {self.get_last_name()} {self.get_first_name()} - Phone: {self.get_phone()}"
 
 
