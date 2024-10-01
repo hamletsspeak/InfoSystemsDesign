@@ -33,3 +33,23 @@ class ClientBase:
         data = json.loads(json_string)
         return ClientBase(**data)
 
+
+#Вывод полной и краткой версии объекта, сравнение объектов
+    def __eq__(self, other):
+        if isinstance(other, ClientBase):
+            return (self.__last_name == other.__last_name and
+                    self.__first_name == other.__first_name and
+                    self.__middle_name == other.__middle_name and
+                    self.__passport_data == other.__passport_data and
+                    self.__phone == other.__phone)
+        return False
+
+class Client(ClientBase):
+    def __str__(self):
+        return (f"Client: {self.get_last_name()} {self.get_first_name()} {self.get_middle_name()}\n"
+                f"Passport Data: {self.get_passport_data()}\n"
+                f"Phone: {self.get_phone()}")
+
+class ClientShortInfo(ClientBase):
+    def __str__(self):
+        return f"Client: {self.get_last_name()} {self.get_first_name()[0]}. {self.get_middle_name()[0]}. - Phone: {self.get_phone()}"
