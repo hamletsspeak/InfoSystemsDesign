@@ -139,6 +139,32 @@ class ClientShortInfo(ClientBase):
         return False
 
 
+# Класс Client с залогами
+class Client(ClientBase):
+    def __init__(self, last_name=None, first_name=None, middle_name=None, address=None, phone=None, pledges=None, data=None):
+        super().__init__(last_name, first_name, middle_name, address, phone, data)
+        self.__pledges = pledges or []  # Список залогов
+    
+    def add_pledge(self, pledge_item):
+        if isinstance(pledge_item, PledgeItem):
+            self.__pledges.append(pledge_item)
+        else:
+            raise ValueError("Invalid pledge item")
+
+    def __str__(self):
+        pledges_info = "\n".join([str(pledge) for pledge in self.__pledges]) if self.__pledges else "No pledges"
+        return (f"Client: {self.get_last_name()} {self.get_first_name()} {self.get_middle_name()}\n"
+                f"Address: {self.get_address()}\n"
+                f"Phone: {self.get_phone()}\n"
+                f"Pledges:\n{pledges_info}")
+
+
+# Краткая информация о клиенте
+class ClientShortInfo(ClientBase):
+    def __str__(self):
+        return f"Client: {self.get_last_name()} {self.get_first_name()} - Phone: {self.get_phone()}"
+
+
 # Пример использования
 try:
     # Создаем объект Client (полная версия)
