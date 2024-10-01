@@ -1,23 +1,18 @@
 class ClientBase:
-    def __init__(self, last_name, first_name, middle_name, passport_data, phone):
-        self.__last_name = last_name
-        self.__first_name = first_name
-        self.__middle_name = middle_name
-        self.__passport_data = passport_data
-        self.__phone = phone
+    @staticmethod
+    def validate_name(name):
+        if not name or len(name) < 2:
+            raise ValueError("Имя должно содержать не менее 2 символов.")
+        return True
 
-    # Методы для получения данных
-    def get_last_name(self):
-        return self.__last_name
+    @staticmethod
+    def validate_passport_data(passport_data):
+        if len(passport_data) != 10:
+            raise ValueError("Паспортные данные должны содержать 10 символов.")
+        return True
 
-    def get_first_name(self):
-        return self.__first_name
-
-    def get_middle_name(self):
-        return self.__middle_name
-
-    def get_passport_data(self):
-        return self.__passport_data
-
-    def get_phone(self):
-        return self.__phone
+    @staticmethod
+    def validate_phone(phone):
+        if not phone.startswith('+') or len(phone) < 10:
+            raise ValueError("Номер телефона должен начинаться с '+' и содержать не менее 10 цифр.")
+        return True
