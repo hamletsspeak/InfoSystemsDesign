@@ -1,124 +1,93 @@
 import json
-import yaml
 import os
 
 class MyEntity:
     """
-    Базовый класс MyEntity, представляющий сущность с уникальными атрибутами id и name.
+    Базовый класс MyEntity, представляющий сущность с id и name.
     """
     def __init__(self, id, name):
-        # Инициализация идентификатора и имени сущности
         self.id = id
         self.name = name
 
     def to_dict(self):
-        """Преобразование объекта MyEntity в словарь для хранения."""
+        """Преобразование объекта в словарь."""
         return {'id': self.id, 'name': self.name}
 
     @classmethod
     def from_dict(cls, data):
-        """Создание объекта MyEntity из словаря (используется при чтении данных из файла)."""
+        """Создание объекта MyEntity из словаря."""
         return cls(id=data['id'], name=data['name'])
 
 
 class MyEntityRepJson:
     """
-    Класс для работы с JSON-файлом, хранящим данные объектов MyEntity.
+    Класс MyEntityRepJson для работы с JSON-файлом.
     """
     def __init__(self, file_path):
-        # Путь к JSON-файлу для хранения данных
         self.file_path = file_path
 
     def read_all(self):
-        """Чтение всех данных из JSON-файла и преобразование их в объекты MyEntity."""
+        """Чтение всех данных из JSON файла."""
         if os.path.exists(self.file_path):
             with open(self.file_path, 'r') as file:
-                data = json.load(file)  # Загрузка данных из JSON
-            return [MyEntity.from_dict(item) for item in data]  # Создание объектов MyEntity
+                data = json.load(file)
+            # Преобразуем каждый элемент в экземпляр MyEntity
+            return [MyEntity.from_dict(item) for item in data]
         return []
 
     def write_all(self, entities):
-        """Запись всех объектов MyEntity в JSON-файл."""
+        """Запись всех данных в JSON файл."""
         with open(self.file_path, 'w') as file:
-            # Преобразуем объекты MyEntity в словари и записываем их в файл
             json.dump([entity.to_dict() for entity in entities], file)
 
     def get_by_id(self, entity_id):
-        """Получение объекта MyEntity по уникальному ID."""
+        """Получение объекта по ID."""
         entities = self.read_all()
         for entity in entities:
             if entity.id == entity_id:
-                return entity  # Возвращаем объект, если ID совпадает
-        return None  # Возвращаем None, если объект не найден
+                return entity
+        return None
 
     def get_k_n_short_list(self, k, n):
-        """
-        Получение подсписка из k по счету n объектов MyEntity.
-        Полезно для постраничного вывода длинного списка данных.
-        """
+        """Получение списка k по счету n объектов."""
         entities = self.read_all()
-        start = (k - 1) * n  # Начало подсписка
-        end = start + n  # Конец подсписка
-        return entities[start:end]  # Возвращаем срез списка
+        start = (k - 1) * n
+        end = start + n
+        return entities[start:end]
 
     def sort_by_field(self, field_name):
-        """Сортировка объектов по указанному полю и запись в файл."""
+        """Сортировка элементов по выбранному полю."""
         entities = self.read_all()
-        # Сортируем объекты на основе выбранного поля
+        # Сортировка по переданному полю
         sorted_entities = sorted(entities, key=lambda x: getattr(x, field_name))
-        self.write_all(sorted_entities)  # Записываем отсортированный список обратно в файл
+        self.write_all(sorted_entities)
 
     def add_entity(self, new_entity):
-        """
-        Добавление нового объекта MyEntity в файл.
-        Генерация нового ID происходит автоматически.
-        """
+        """Добавление нового объекта с уникальным ID."""
         entities = self.read_all()
-        # Новый ID — на единицу больше максимального, либо 1, если список пуст
+        # Генерация нового уникального ID
         new_id = max(entity.id for entity in entities) + 1 if entities else 1
-        new_entity.id = new_id  # Присваиваем новый ID добавляемому объекту
-        entities.append(new_entity)  # Добавляем объект в список
-        self.write_all(entities)  # Записываем обновленный список в файл
+        new_entity.id = new_id
+        entities.append(new_entity)
+        self.write_all(entities)
 
     def update_entity(self, entity_id, updated_entity):
-        """
-        Обновление объекта MyEntity в файле по ID.
-        Если объект с таким ID найден, он заменяется новым значением.
-        """
+        """Обновление объекта по ID."""
         entities = self.read_all()
         for i, entity in enumerate(entities):
             if entity.id == entity_id:
-                entities[i] = updated_entity  # Обновляем объект
+                # Замена существующего объекта
+                entities[i] = updated_entity
                 break
-        self.write_all(entities)  # Записываем изменения в файл
+        self.write_all(entities)
 
     def delete_entity(self, entity_id):
-        """Удаление объекта MyEntity по ID из файла."""
+        """Удаление объекта по ID."""
         entities = self.read_all()
-        # Формируем новый список без объекта с заданным ID
+        # Исключаем объект с заданным ID
         entities = [entity for entity in entities if entity.id != entity_id]
-        self.write_all(entities)  # Записываем обновленный список
+        self.write_all(entities)
 
     def get_count(self):
-        """Возвращает количество объектов MyEntity в файле."""
-        return len(self.read_all())  # Количество объектов в файле
-
-
-class MyEntityRepYaml(MyEntityRepJson):
-    """
-    Класс MyEntityRepYaml для работы с YAML-файлом, наследующий методы базового класса JSON-репозитория.
-    Переопределяет методы для работы с YAML.
-    """
-    def read_all(self):
-        """Чтение всех данных из YAML-файла и преобразование их в объекты MyEntity."""
-        if os.path.exists(self.file_path):
-            with open(self.file_path, 'r') as file:
-                data = yaml.safe_load(file)  # Загрузка данных из YAML
-            return [MyEntity.from_dict(item) for item in data]  # Создание объектов MyEntity
-        return []
-
-    def write_all(self, entities):
-        """Запись всех объектов MyEntity в YAML-файл."""
-        with open(self.file_path, 'w') as file:
-            # Преобразуем объекты MyEntity в словари и записываем их в файл
-            yaml.dump([entity.to_dict() for entity in entities], file)
+        """Получение количества объектов."""
+        return len(self.read_all())
