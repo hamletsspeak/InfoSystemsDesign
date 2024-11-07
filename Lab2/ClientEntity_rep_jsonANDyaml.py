@@ -4,7 +4,7 @@ import os
 
 class MyEntity:
     """
-    Базовый класс MyEntity, представляющий сущность с id и name.
+    Базовый класс MyEntity, представляющий сущность с id и nam
     """
     def __init__(self, id, name):
         self.id = id

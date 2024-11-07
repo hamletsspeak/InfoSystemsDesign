@@ -128,42 +128,31 @@ class Client(ClientBase):
         else:
             raise ValueError("Invalid pledge item")
 
-
     def __str__(self):
         pledges_info = "\n".join([str(pledge) for pledge in self.__pledges]) if self.__pledges else "No pledges"
-        #Возвращает полную версию информации о клиенте
+        # Возвращает полную версию информации о клиенте
         return (f"Client: {self.get_last_name()} {self.get_first_name()} {self.get_middle_name()}\n"
                 f"Address: {self.get_address()}\n"
                 f"Phone: {self.get_phone()}\n"
                 f"Pledges:\n{pledges_info}")
 
 
-# Краткая информация о клиенте
-class ClientShortInfo(ClientBase):
+# Общий класс для краткой информации
+class ClientInfo(ClientBase):
     def __str__(self):
-        #Возвращает краткую версию информации о клиенте
+        # Базовая краткая информация о клиенте
         return f"Client: {self.get_last_name()} {self.get_first_name()} - Phone: {self.get_phone()}"
 
 
-# Пример использования
-try:
-    # Создаем объект Client (полная версия)
-    client1 = Client("Ivanov", "Ivan", "Ivanovich", "123 Main St", "+1234567890")
-    
-    # Добавляем залоговый объект
-    pledge1 = PledgeItem("Watch", 10000, 5000, "2024-12-01")
-    client1.add_pledge(pledge1)
-    
-    # Создаем объект ClientShortInfo (краткая версия)
-    client_short_info = ClientShortInfo("Ivanov", "Ivan", "Ivanovich", "123 Main St", "+1234567890")
-    
-    # Вывод полной версии клиента
-    print("Полная версия клиента:")
-    print(client1)  # Output: Полная информация о клиенте
-    
-    # Вывод краткой версии клиента
-    print("\nКраткая версия клиента:")
-    print(client_short_info)  # Output: Краткая информация о клиенте
+# Краткая информация о клиенте с ИНН и ОГРН
+class ClientBriefInfo(ClientInfo):
+    def __init__(self, last_name=None, first_name=None, middle_name=None, phone=None, inn=None, ogrn=None, data=None):
+        super().__init__(last_name, first_name, middle_name, phone=phone, data=data)
+        self.__inn = self.validate_field(inn, "INN", exact_length=12)
+        self.__ogrn = self.validate_field(ogrn, "OGRN", exact_length=13)
 
-except ValueError as e:
-    print(e)
+    def __str__(self):
+        initials = f"{self.get_first_name()[0]}. {self.get_middle_name()[0]}." if self.get_middle_name() else ""
+        return (f"Client: {self.get_last_name()} {initials}\n"
+                f"Phone: {self.get_phone()}\n"
+                f"INN: {self.__inn}, OGRN: {self.__ogrn}")
