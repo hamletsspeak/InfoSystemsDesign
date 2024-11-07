@@ -1,4 +1,5 @@
 import json
+import os
 
 # Класс для залогового объекта
 class PledgeItem:
@@ -139,6 +140,8 @@ class Client(ClientBase):
 
 # Общий класс для краткой информации
 class ClientInfo(ClientBase):
+    # Класс ClientInfo объединяет краткую информацию
+    # базового класса и используется как основа для других коротких версий клиента
     def __str__(self):
         # Базовая краткая информация о клиенте
         return f"Client: {self.get_last_name()} {self.get_first_name()} - Phone: {self.get_phone()}"
@@ -146,12 +149,14 @@ class ClientInfo(ClientBase):
 
 # Краткая информация о клиенте с ИНН и ОГРН
 class ClientBriefInfo(ClientInfo):
+    # Класс для клиентов с дополнительными полями ИНН и ОГРН, расширяющий ClientInfo
     def __init__(self, last_name=None, first_name=None, middle_name=None, phone=None, inn=None, ogrn=None, data=None):
         super().__init__(last_name, first_name, middle_name, phone=phone, data=data)
         self.__inn = self.validate_field(inn, "INN", exact_length=12)
         self.__ogrn = self.validate_field(ogrn, "OGRN", exact_length=13)
 
     def __str__(self):
+        # Формирует строку с фамилией и инициалами, а также включает ИНН и ОГРН
         initials = f"{self.get_first_name()[0]}. {self.get_middle_name()[0]}." if self.get_middle_name() else ""
         return (f"Client: {self.get_last_name()} {initials}\n"
                 f"Phone: {self.get_phone()}\n"
