@@ -161,3 +161,15 @@ class ClientBriefInfo(ClientInfo):
         return (f"Client: {self.get_last_name()} {initials}\n"
                 f"Phone: {self.get_phone()}\n"
                 f"INN: {self.__inn}, OGRN: {self.__ogrn}")
+
+
+#Пример использования
+# Создаем объект ClientBriefInfo
+client_brief = ClientBriefInfo("Ivanov", "Ivan", "Ivanovich", phone="+1234567890", inn="123456789012", ogrn="1234567890123")
+print(client_brief)
+
+# Создаем объект Client (полная версия)
+client_full = Client("Ivanov", "Ivan", "Ivanovich", "123 Main St", "+1234567890")
+pledge1 = PledgeItem("Watch", 10000, 5000, "2024-12-01")
+client_full.add_pledge(pledge1)
+print(client_full)
