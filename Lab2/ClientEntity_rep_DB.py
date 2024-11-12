@@ -1,76 +1,85 @@
 import mysql.connector
 
+class DatabaseConnectionSingleton:
+    """Класс-одиночка для управления подключением к базе данных."""
+    
+    _instance = None  # Хранение единственного экземпляра класса
 
-class ClientEntity_rep_DB:
-    def __init__(self, db_config):
-        # Устанавливаем соединение с базой данных
+    def __new__(cls, db_config):
+        """Создание единственного экземпляра DatabaseConnectionSingleton."""
+        if cls._instance is None:
+            cls._instance = super(DatabaseConnectionSingleton, cls).__new__(cls)
+            cls._instance._initialize(db_config)
+        return cls._instance
+
+    def _initialize(self, db_config):
+        """Инициализация подключения к базе данных."""
         self.connection = mysql.connector.connect(**db_config)
         self.cursor = self.connection.cursor(dictionary=True)
 
-    @staticmethod
-    def validate_string(value, field_name, max_length=None):
-        if not isinstance(value, str) or (max_length and len(value) > max_length):
-            raise ValueError(f"{field_name} must be a string with max length {max_length}")
-        return value
-
-    @staticmethod
-    def validate_email(value):
-        if '@' not in value or '.' not in value:
-            raise ValueError("Invalid email address")
-        return value
-
-    def get_by_id(self, client_id):
-        # Получить объект Client по ID
-        query = "SELECT * FROM client WHERE id = %s"
-        self.cursor.execute(query, (client_id,))
-        return self.cursor.fetchone()
-
-    def get_k_n_short_list(self, k, n):
-        # Получить k по счёту n объектов
-        offset = (k - 1) * n
-        query = f"SELECT * FROM client ORDER BY id LIMIT {n} OFFSET {offset}"
-        self.cursor.execute(query)
+    def execute_query(self, query, params=None):
+        """Выполнение SQL-запроса с параметрами и возврат результатов."""
+        self.cursor.execute(query, params)
         return self.cursor.fetchall()
 
-    def add_client(self, client_data):
-        # Добавить клиента в список после валидации данных
-        name = self.validate_string(client_data['name'], 'Name', max_length=100)
-        email = self.validate_email(client_data['email'])
-        phone = self.validate_string(client_data['phone'], 'Phone', max_length=15)
-        
-        query = "INSERT INTO client (name, email, phone) VALUES (%s, %s, %s)"
-        self.cursor.execute(query, (name, email, phone))
+    def execute_update(self, query, params=None):
+        """Выполнение SQL-команды на обновление, вставку или удаление данных."""
+        self.cursor.execute(query, params)
         self.connection.commit()
         return self.cursor.lastrowid
 
+    def __del__(self):
+        """Закрытие подключения при уничтожении объекта."""
+        if self.cursor:
+            self.cursor.close()
+        if self.connection:
+            self.connection.close()
+
+
+class ClientEntity_rep_DB:
+    """Класс для работы с таблицей клиентов через адаптер DatabaseConnectionSingleton."""
+
+    def __init__(self, db_config):
+        # Подключаемся через Singleton
+        self.db = DatabaseConnectionSingleton(db_config)
+
+    def get_by_id(self, client_id):
+        """Получить объект Client по ID."""
+        query = "SELECT * FROM client WHERE id = %s"
+        results = self.db.execute_query(query, (client_id,))
+        return results[0] if results else None
+
+    def get_k_n_short_list(self, k, n):
+        """Получить список k по счёту n объектов."""
+        offset = (k - 1) * n
+        query = f"SELECT * FROM client ORDER BY id LIMIT {n} OFFSET {offset}"
+        return self.db.execute_query(query)
+
+    def add_client(self, client_data):
+        """Добавить клиента в список после валидации данных."""
+        query = "INSERT INTO client (name, email, phone) VALUES (%s, %s, %s)"
+        params = (client_data['name'], client_data['email'], client_data['phone'])
+        return self.db.execute_update(query, params)
+
     def update_client_by_id(self, client_id, client_data):
-        # Обновить данные клиента по ID с валидацией
-        name = self.validate_string(client_data['name'], 'Name', max_length=100)
-        email = self.validate_email(client_data['email'])
-        phone = self.validate_string(client_data['phone'], 'Phone', max_length=15)
-        
+        """Обновить данные клиента по ID."""
         query = "UPDATE client SET name = %s, email = %s, phone = %s WHERE id = %s"
-        self.cursor.execute(query, (name, email, phone, client_id))
-        self.connection.commit()
+        params = (client_data['name'], client_data['email'], client_data['phone'], client_id)
+        self.db.execute_update(query, params)
 
     def delete_client_by_id(self, client_id):
-        # Удалить клиента по ID
+        """Удалить клиента по ID."""
         query = "DELETE FROM client WHERE id = %s"
-        self.cursor.execute(query, (client_id,))
-        self.connection.commit()
+        self.db.execute_update(query, (client_id,))
 
     def get_count(self):
-        # Получить количество клиентов
+        """Получить количество клиентов."""
         query = "SELECT COUNT(*) AS count FROM client"
-        self.cursor.execute(query)
-        result = self.cursor.fetchone()
-        return result['count'] if result else 0
+        result = self.db.execute_query(query)
+        return result[0]['count'] if result else 0
 
-    def __del__(self):
-        # Закрываем соединение при уничтожении объекта
-        self.cursor.close()
-        self.connection.close()
 
+# Настройки базы данных
 db_config = {
     'host': 'localhost',
     'user': 'your_username',
@@ -78,7 +87,7 @@ db_config = {
     'database': 'your_database'
 }
 
-# Подключение к базе данных
+# Пример использования:
 client_db = ClientEntity_rep_DB(db_config)
 
 # Пример 1: Добавление нового клиента
