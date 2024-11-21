@@ -192,9 +192,6 @@ class AddClientView(tk.Toplevel):
         self.destroy()
 
 
-
-
-
 # ---------- ЗАПУСК ---------- #
 if __name__ == "__main__":
     client_repo = ClientRepositorySQLite()  # Репозиторий для работы с SQLite
