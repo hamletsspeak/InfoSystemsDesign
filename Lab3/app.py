@@ -35,8 +35,13 @@ class ClientRepositorySQLite:
 
     def get_all_clients(self):
         """Получение всех клиентов."""
-        self.cursor.execute("SELECT fio, phone, pledges FROM clients")
+        self.cursor.execute("SELECT id, fio, phone, pledges FROM clients")
         return self.cursor.fetchall()
+    
+    def delete_client(self, client_id):
+        """Удаление клиента по ID."""
+        self.cursor.execute("DELETE FROM clients WHERE id = ?", (client_id,))
+        self.conn.commit()
 
 
 # ---------- КОНТРОЛЛЕР ---------- #
@@ -57,6 +62,12 @@ class MainController:
         self.model.add_client(client_data)
         self.update_view()
 
+    def delete_client(self, client_id):
+        """Удаление клиента через модель."""
+        if client_id:
+            self.model.delete_client(client_id)
+            self.update_view()
+            
     def on_add_button_click(self):
         """Открытие окна добавления клиента."""
         AddClientController(self.model, self)
@@ -98,7 +109,8 @@ class MainView(tk.Tk):
         self.geometry("600x400")
 
         # Таблица
-        self.tree = ttk.Treeview(self, columns=("FIO", "Phone", "Pledges"), show="headings")
+        self.tree = ttk.Treeview(self, columns=("ID", "FIO", "Phone", "Pledges"), show="headings")
+        self.tree.heading("ID", text="ID")
         self.tree.heading("FIO", text="ФИО")
         self.tree.heading("Phone", text="Телефон")
         self.tree.heading("Pledges", text="Количество залогов")
@@ -107,6 +119,9 @@ class MainView(tk.Tk):
         # Кнопки
         add_button = ttk.Button(self, text="Добавить клиента", command=self.on_add_button_click)
         add_button.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        delete_button = ttk.Button(self, text="Удалить клиента", command=self.on_delete_button_click)
+        delete_button.pack(side=tk.LEFT, padx=10, pady=10)
 
     def on_add_button_click(self):
         """Обработчик для кнопки добавления клиента."""
@@ -114,7 +129,27 @@ class MainView(tk.Tk):
             self.controller.on_add_button_click()
         else:
             messagebox.showerror("Ошибка", "Контроллер не привязан!")
+    
+    def on_delete_button_click(self):
+        """Обработчик для кнопки удаления клиента."""
+        selected_item = self.tree.selection()
+        if selected_item:
+            client_id = self.tree.item(selected_item[0], "values")[0]  # Получаем ID
+            client_name = self.tree.item(selected_item[0], "values")[1]  # Получаем ФИО для подтверждения
 
+            # Окно подтверждения
+            confirm = messagebox.askyesno(
+                "Подтверждение удаления",
+                f"Вы уверены, что хотите удалить клиента: {client_name}?"
+            )
+
+            if confirm:  # Если пользователь нажал "Да"
+                if self.controller:
+                    self.controller.delete_client(client_id)
+        else:
+            messagebox.showerror("Ошибка", "Выберите клиента для удаления!")
+
+    
     def update_table(self, clients):
         """Обновление данных таблицы."""
         for row in self.tree.get_children():
