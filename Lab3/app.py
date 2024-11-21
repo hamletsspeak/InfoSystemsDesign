@@ -106,14 +106,14 @@ class MainView(tk.Tk):
         super().__init__()
         self.controller = controller
         self.title("Ломбард - Главное окно")
-        self.geometry("600x400")
+        self.geometry("1200x400")
 
         # Таблица
         self.tree = ttk.Treeview(self, columns=("ID", "FIO", "Phone", "Pledges"), show="headings")
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("FIO", text="ФИО")
-        self.tree.heading("Phone", text="Телефон")
-        self.tree.heading("Pledges", text="Количество залогов")
+        self.tree.heading("ID", text="ID", command=lambda: self.sort_table("ID"))
+        self.tree.heading("FIO", text="ФИО", command=lambda: self.sort_table("FIO"))
+        self.tree.heading("Phone", text="Телефон", command=lambda: self.sort_table("Phone"))
+        self.tree.heading("Pledges", text="Количество залогов", command=lambda: self.sort_table("Pledges"))
         self.tree.pack(fill=tk.BOTH, expand=True)
 
         # Кнопки
@@ -123,6 +123,28 @@ class MainView(tk.Tk):
         delete_button = ttk.Button(self, text="Удалить клиента", command=self.on_delete_button_click)
         delete_button.pack(side=tk.LEFT, padx=10, pady=10)
 
+        self.sort_order = {"ID": False, "FIO": False, "Phone": False, "Pledges": False}
+    
+    def sort_table(self, column):
+        """Сортировка таблицы по указанному столбцу."""
+        # Индекс столбца для сортировки
+        column_index = {"ID": 0, "FIO": 1, "Phone": 2, "Pledges": 3}[column]
+
+        # Получаем текущие данные из таблицы
+        data = [(self.tree.item(item)["values"], item) for item in self.tree.get_children()]
+
+        # Определяем порядок сортировки
+        reverse = self.sort_order[column]
+        data.sort(key=lambda x: x[0][column_index], reverse=reverse)
+
+        # Переключаем порядок сортировки
+        self.sort_order[column] = not reverse
+
+        # Удаляем старые строки и вставляем их в новом порядке
+        self.tree.delete(*self.tree.get_children())
+        for values, _ in data:
+            self.tree.insert("", tk.END, values=values)
+                
     def on_add_button_click(self):
         """Обработчик для кнопки добавления клиента."""
         if self.controller:
@@ -157,6 +179,8 @@ class MainView(tk.Tk):
 
         for client in clients:
             self.tree.insert("", tk.END, values=client)
+            
+    
 
 
 class AddClientView(tk.Toplevel):
