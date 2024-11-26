@@ -14,7 +14,7 @@ class ClientRepositorySQLite:
         self._create_table()
 
     def _create_table(self):
-        """Создание таблицы клиентов, если она ещё не существует."""
+        """Создание или обновление таблицы клиентов."""
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,12 +25,33 @@ class ClientRepositorySQLite:
         """)
         self.conn.commit()
 
+        # Проверяем наличие дополнительных колонок и добавляем их при необходимости
+        existing_columns = self._get_existing_columns()
+        if "address" not in existing_columns:
+            self.cursor.execute("ALTER TABLE clients ADD COLUMN address TEXT")
+        if "inn" not in existing_columns:
+            self.cursor.execute("ALTER TABLE clients ADD COLUMN inn TEXT")
+        if "birth_date" not in existing_columns:
+            self.cursor.execute("ALTER TABLE clients ADD COLUMN birth_date TEXT")
+        self.conn.commit()
+
+    def _get_existing_columns(self):
+        """Получение списка существующих колонок в таблице."""
+        self.cursor.execute("PRAGMA table_info(clients)")
+        return [row[1] for row in self.cursor.fetchall()]
+    
+    def get_client_by_id(self, client_id):
+        """Получение полной информации о клиенте по ID."""
+        self.cursor.execute("SELECT fio, phone, pledges, address, inn, birth_date FROM clients WHERE id = ?", (client_id,))
+        return self.cursor.fetchone()
+    
     def add_client(self, client_data):
         """Добавление нового клиента."""
         self.cursor.execute("""
-            INSERT INTO clients (fio, phone, pledges)
-            VALUES (?, ?, ?)
-        """, (client_data['fio'], client_data['phone'], client_data['pledges']))
+            INSERT INTO clients (fio, phone, pledges, address, inn, birth_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (client_data['fio'], client_data['phone'], client_data['pledges'],
+              client_data['address'], client_data['inn'], client_data['birth_date']))
         self.conn.commit()
 
     def get_all_clients(self):
@@ -43,6 +64,31 @@ class ClientRepositorySQLite:
         self.cursor.execute("DELETE FROM clients WHERE id = ?", (client_id,))
         self.conn.commit()
 
+class ClientInfoView(tk.Toplevel):
+    """Окно для отображения полной информации о клиенте."""
+    def __init__(self, client_data):
+        super().__init__()
+        self.title("Полная информация о клиенте")
+        self.geometry("400x300")
+
+        # Отображение информации
+        tk.Label(self, text="ФИО:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[0]).grid(row=0, column=1, sticky=tk.W, padx=10, pady=5)
+
+        tk.Label(self, text="Телефон:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[1]).grid(row=1, column=1, sticky=tk.W, padx=10, pady=5)
+
+        tk.Label(self, text="Количество залогов:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[2]).grid(row=2, column=1, sticky=tk.W, padx=10, pady=5)
+
+        tk.Label(self, text="Адрес:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[3]).grid(row=3, column=1, sticky=tk.W, padx=10, pady=5)
+
+        tk.Label(self, text="ИНН:").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[4]).grid(row=4, column=1, sticky=tk.W, padx=10, pady=5)
+
+        tk.Label(self, text="Дата рождения:").grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(self, text=client_data[5]).grid(row=5, column=1, sticky=tk.W, padx=10, pady=5)
 
 # ---------- КОНТРОЛЛЕР ---------- #
 class MainController:
@@ -71,7 +117,14 @@ class MainController:
     def on_add_button_click(self):
         """Открытие окна добавления клиента."""
         AddClientController(self.model, self)
-
+        
+    def show_client_info(self, client_id):
+        """Открытие окна с полной информацией о клиенте."""
+        client_data = self.model.get_client_by_id(client_id)
+        if client_data:
+            ClientInfoView(client_data)
+        else:
+            messagebox.showerror("Ошибка", "Не удалось загрузить данные клиента!")
 
 class AddClientController:
     """Контроллер для окна добавления клиента."""
@@ -93,6 +146,12 @@ class AddClientController:
             messagebox.showerror("Ошибка", "Телефон должен быть в формате +7 (xxx) xxx-xx-xx!")
             return
 
+        # Проверка даты рождения
+        birth_date_pattern = r"^\d{2}-\d{2}-\d{4}$"
+        if not re.match(birth_date_pattern, client_data['birth_date']):
+            messagebox.showerror("Ошибка", "Дата рождения должна быть в формате ДД-ММ-ГГГГ!")
+            return
+        
         # Если проверка прошла, добавляем клиента
         self.model.add_client(client_data)
         self.main_controller.update_view()
@@ -124,6 +183,19 @@ class MainView(tk.Tk):
         delete_button.pack(side=tk.LEFT, padx=10, pady=10)
 
         self.sort_order = {"ID": False, "FIO": False, "Phone": False, "Pledges": False}
+        
+        info_button = ttk.Button(self, text="Посмотреть информацию", command=self.on_info_button_click)
+        info_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+    def on_info_button_click(self):
+        """Обработчик для кнопки 'Посмотреть информацию'."""
+        selected_item = self.tree.selection()
+        if selected_item:
+            client_id = self.tree.item(selected_item[0], "values")[0]  # Получаем ID клиента
+            if self.controller:
+                self.controller.show_client_info(client_id)
+        else:
+            messagebox.showerror("Ошибка", "Выберите клиента для просмотра информации!")
     
     def sort_table(self, column):
         """Сортировка таблицы по указанному столбцу."""
@@ -189,7 +261,7 @@ class AddClientView(tk.Toplevel):
         super().__init__()
         self.controller = controller
         self.title("Добавить клиента")
-        self.geometry("300x200")
+        self.geometry("300x500")
 
         # Метки и поля ввода
         tk.Label(self, text="ФИО (например, Иван Иванов):").pack(pady=5, anchor=tk.W, padx=10)
@@ -206,6 +278,21 @@ class AddClientView(tk.Toplevel):
         # Ограничение ввода через обработчик событий
         self.phone_entry.bind("<KeyRelease>", self.format_phone)
 
+        # Поле для ввода адреса
+        tk.Label(self, text="Адрес:").pack(pady=5, anchor=tk.W, padx=10)
+        self.address_entry = ttk.Entry(self)
+        self.address_entry.pack(pady=5, padx=10, fill=tk.X)
+
+        # Поле для ввода ИНН
+        tk.Label(self, text="ИНН:").pack(pady=5, anchor=tk.W, padx=10)
+        self.inn_entry = ttk.Entry(self)
+        self.inn_entry.pack(pady=5, padx=10, fill=tk.X)
+
+        # Поле для ввода даты рождения
+        tk.Label(self, text="Дата рождения (ДД-ММ-ГГГГ):").pack(pady=5, anchor=tk.W, padx=10)
+        self.birth_date_entry = ttk.Entry(self)
+        self.birth_date_entry.pack(pady=5, padx=10, fill=tk.X)
+        
         # Кнопка "Сохранить"
         submit_button = ttk.Button(self, text="Сохранить", command=self.submit)
         submit_button.pack(pady=10)
@@ -242,7 +329,10 @@ class AddClientView(tk.Toplevel):
         client_data = {
             "fio": self.fio_entry.get(),
             "phone": self.phone_var.get(),
-            "pledges": 0  # Новый клиент без залогов
+            "pledges": 0,
+            "address": self.address_entry.get(),
+            "inn": self.inn_entry.get(),
+            "birth_date": self.birth_date_entry.get(),
         }
         self.controller.submit_client(client_data)
 
