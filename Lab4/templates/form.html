@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ client and "Редактировать клиента" or "Добавить клиента" }}</title>
+</head>
+<body>
+    <h1>{{ client and "Редактировать клиента" or "Добавить клиента" }}</h1>
+    <form method="post" action="{{ client and '/edit' or '/add' }}">
+        {% if client %}
+        <input type="hidden" name="id" value="{{ client[0] }}">
+        {% endif %}
+        <label>ФИО: <input type="text" name="fio" value="{{ client and client[1] or '' }}" required></label><br>
+        <label>Телефон: <input type="text" name="phone" value="{{ client and client[2] or '' }}" required></label><br>
+        <label>Адрес: <input type="text" name="address" value="{{ client and client[3] or '' }}" required></label><br>
+        <label>ИНН: <input type="text" name="inn" value="{{ client and client[4] or '' }}" required></label><br>
+        <label>Дата рождения: <input type="date" name="birth_date" value="{{ client and client[5] or '' }}" required></label><br>
+        <button type="submit">Сохранить</button>
+    </form>
+      
+    <a href="/">Назад</a>
+</body>
+</html>
