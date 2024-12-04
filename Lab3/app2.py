@@ -3,7 +3,6 @@ from tkinter import ttk, messagebox
 import sqlite3
 import re
 
-
 # ---------- МОДЕЛЬ ---------- #
 class ClientRepositorySQLite:
     """Репозиторий клиентов для работы с SQLite."""
