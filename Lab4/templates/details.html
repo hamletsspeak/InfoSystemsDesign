@@ -8,13 +8,10 @@
     <h1>Детали клиента</h1>
     <p><strong>ID:</strong> {{ client[0] }}</p>
     <p><strong>ФИО:</strong> {{ client[1] }}</p>
-    <p><strong>Телефон:</strong> {{ client[2] if client[2] else "Не указан" }}</p>
-    <p><strong>Адрес:</strong> {{ client[3] if client[3] else "Не указан" }}</p>
+    <p><strong>Телефон:</strong> {{ client[2] }}</p>
+    <p><strong>Адрес:</strong> {{ client[3] }}</p>
     <p><strong>ИНН:</strong> {{ client[4] }}</p>
     <p><strong>Дата рождения:</strong> {{ client[5] }}</p>
-    
-    <a href="/edit?id={{ client[0] }}">Редактировать</a>
-    <a href="/delete?id={{ client[0] }}">Удалить</a>
     <a href="/">Назад</a>
 </body>
 </html>

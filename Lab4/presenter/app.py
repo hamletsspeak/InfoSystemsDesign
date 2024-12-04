@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class ClientPresenter(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.model = ClientModel()
-        self.view = ClientView()  # Используем класс, который реализует интерфейс IClientView
+        self.view = ClientView()
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -36,14 +36,14 @@ class ClientPresenter(BaseHTTPRequestHandler):
 
     def handle_home(self):
         clients = self.model.get_all_clients()
-        html = self.view.render_index(clients)  # Используем метод интерфейса
+        html = self.view.render_template("templates/index.html", {"clients": clients})
         self._send_response(html)
 
     def handle_details(self):
         client_id = self._get_query_param("id")
         if client_id:
             client = self.model.get_client_by_id(int(client_id))
-            html = self.view.render_details(client)  # Используем метод интерфейса
+            html = self.view.render_template("templates/details.html", {"client": client})
             self._send_response(html)
         else:
             self.handle_bad_request("Client ID is missing.")
@@ -51,7 +51,7 @@ class ClientPresenter(BaseHTTPRequestHandler):
     def handle_form(self):
         client_id = self._get_query_param("id")
         client = self.model.get_client_by_id(int(client_id)) if client_id else None
-        html = self.view.render_form(client)  # Используем метод интерфейса
+        html = self.view.render_template("templates/form.html", {"client": client})
         self._send_response(html)
 
     def handle_add(self):
